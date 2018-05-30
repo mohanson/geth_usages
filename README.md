@@ -27,3 +27,7 @@ a9059cbb -> transfer(address,uint256)
 095ea7b3 -> approve(address,uint256)
 23b872dd -> transferFrom(address,address,uint256)
 ```
+
+# 如何构造参数给合约调用?
+
+[https://github.com/ethereum/web3.js/blob/master/test/coder.encodeParam.js](https://github.com/ethereum/web3.js/blob/master/test/coder.encodeParam.js)
