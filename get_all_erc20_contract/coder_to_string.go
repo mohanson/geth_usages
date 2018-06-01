@@ -15,11 +15,11 @@ import (
 // {"address":"0x99146Bab2bB34D9Ca49EC4f0c82De3E5789ae22e","created":824235,"decimals":0,"name":"","symbol":""}
 
 type TokenInfo struct {
-	Address  string
-	Created  int64
-	Decimals int64
-	Name     string
-	Symbol   string
+	Address  string `json:"address"`
+	Created  int64  `json:"created"`
+	Decimals int64  `json:"decimals"`
+	Name     string `json:"name"`
+	Symbol   string `json:"symbol"`
 }
 
 func coderToString(s string) string {
