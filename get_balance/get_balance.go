@@ -16,9 +16,7 @@ func main() {
 	}
 	client := ethclient.NewClient(rpcDial)
 
-	ctx := context.Background()
-	defer ctx.Done()
-	r, err := client.BalanceAt(ctx, common.HexToAddress("0x3aa9e3ab43f7149f3842d67863ecd80adba3447e"), nil)
+	r, err := client.BalanceAt(context.Background(), common.HexToAddress("0x3aa9e3ab43f7149f3842d67863ecd80adba3447e"), nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
