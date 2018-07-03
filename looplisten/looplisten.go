@@ -12,22 +12,29 @@ import (
 	"github.com/mohanson/simplestorage"
 )
 
+const (
+	cEthServer       = "https://ropsten.infura.io"
+	cTimeout         = 20
+	cConfirmedNumber = 6
+	cSSDir           = "/tmp"
+)
+
 func Handle(block *types.Block) error {
 	log.Println(block.Number().String(), block.Hash().String())
 	return nil
 }
 
 func Listen() error {
-	rpccli, err := rpc.Dial("https://ropsten.infura.io")
+	rpccli, err := rpc.Dial(cEthServer)
 	if err != nil {
 		return err
 	}
 	client := ethclient.NewClient(rpccli)
 
-	ss := simplestorage.New("/tmp")
+	ss := simplestorage.New(cSSDir)
 	var number int64
 	if err := ss.Get("number", &number); err != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*cTimeout)
 		header, err := client.HeaderByNumber(ctx, nil)
 		cancel()
 		if err != nil {
@@ -39,15 +46,14 @@ func Listen() error {
 	log.Println("From number:", number)
 
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*cTimeout)
 		header, err := client.HeaderByNumber(ctx, nil)
 		cancel()
 		if err != nil {
 			return err
 		}
-		// 等待 6 个确认
-		if number < header.Number.Int64()-6 {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+		if number <= header.Number.Int64()-int64(cConfirmedNumber) {
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*cTimeout)
 			block, err := client.BlockByNumber(ctx, big.NewInt(number))
 			cancel()
 			if err != nil {
