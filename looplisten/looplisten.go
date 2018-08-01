@@ -6,77 +6,72 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/mohanson/simplestorage"
+	"github.com/mohanson/acdb"
 )
 
 const (
 	cEthServer       = "https://ropsten.infura.io"
-	cTimeout         = 20
 	cConfirmedNumber = 6
-	cSSDir           = "/tmp"
+	cDoc             = "/tmp"
 )
 
-func Handle(block *types.Block) error {
-	log.Println(block.Number().String(), block.Hash().String())
-	return nil
+type Conf struct {
+	BlockNumber int64
+	BlockI      int64
 }
 
-func Listen() error {
+func listen() error {
 	rpccli, err := rpc.Dial(cEthServer)
 	if err != nil {
 		return err
 	}
 	client := ethclient.NewClient(rpccli)
 
-	ss := simplestorage.New(cSSDir)
-	var number int64
-	if err := ss.Get("number", &number); err != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*cTimeout)
-		header, err := client.HeaderByNumber(ctx, nil)
-		cancel()
-		if err != nil {
-			return err
-		}
-		number = header.Number.Int64()
-	}
-	number = number + 1
-	log.Println("From number:", number)
+	db := acdb.Doc(cDoc)
+	conf := Conf{}
+	db.Get("conf", &conf)
 
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*cTimeout)
-		header, err := client.HeaderByNumber(ctx, nil)
-		cancel()
+		header, err := client.HeaderByNumber(context.Background(), nil)
 		if err != nil {
 			return err
 		}
-		if number <= header.Number.Int64()-int64(cConfirmedNumber) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*cTimeout)
-			block, err := client.BlockByNumber(ctx, big.NewInt(number))
-			cancel()
-			if err != nil {
-				return err
-			}
-			if err := Handle(block); err != nil {
-				log.Fatalln(err)
-			}
-			if err := ss.Set("number", number); err != nil {
-				log.Fatalln(err)
-			}
-			number = number + 1
+		if conf.BlockNumber > header.Number.Int64()-int64(cConfirmedNumber) {
+			time.Sleep(time.Second * 20)
 			continue
 		}
-		time.Sleep(time.Minute)
+		block, err := client.BlockByNumber(context.Background(), big.NewInt(conf.BlockNumber))
+		if err != nil {
+			return err
+		}
+
+		for i, tx := range block.Transactions() {
+			if int64(i) < conf.BlockI {
+				continue
+			}
+			// Handle Tx Tic
+			log.Println(conf.BlockNumber, conf.BlockI)
+			// Handle Tx Toc
+
+			conf.BlockI = conf.BlockI + 1
+			db.Set("conf", &conf)
+		}
+
+		conf.BlockNumber = conf.BlockNumber + 1
+		conf.BlockI = 0
+		db.Set("conf", &conf)
 	}
+
+	return nil
 }
 
 func main() {
 	for {
-		if err := Listen(); err != nil {
-			log.Println("Listen error:", err)
+		if err := listen(); err != nil {
+			log.Println(err)
+			time.Sleep(time.Second * 20)
 		}
-		time.Sleep(time.Minute)
 	}
 }
