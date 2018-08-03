@@ -20,7 +20,7 @@ func listen() error {
 	}
 	client := ethclient.NewClient(rpccli)
 
-	block, err := client.BlockByNumber(context.Background(), big.NewInt(6073453))
+	block, err := client.BlockByNumber(context.Background(), big.NewInt(447767))
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ func listen() error {
 		}
 
 		for _, txlog := range receipt.Logs {
-			if len(txlog.Topics) == 0 {
+			if len(txlog.Topics) != 3 {
 				continue
 			}
 			if txlog.Topics[0].String() == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef" {
